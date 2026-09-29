@@ -1,0 +1,55 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+
+# 1. Parámetros del sistema
+g_l = 1.0
+f0 = 0.01
+omega = 2.0 / np.pi
+T = np.pi**2  
+
+def sistema_pendulo(t, y):
+    theta, v = y
+    return [v, -np.sin(theta) + f0 * np.cos(omega * t)]
+
+# 2. Número de períodos para que las curvas se vean continuas
+n_periodos = 1000  
+t_eval = np.array([n * T for n in range(n_periodos)])
+t_span = [0, n_periodos * T]
+
+# 3. Malla  de condiciones iniciales para poblar todo el espacio de fases
+
+theta_0s = np.linspace(0.1, 2.8, 15)
+v_0s = np.linspace(0.0, 2.0, 10)
+
+plt.figure(figsize=(9, 6), dpi=300)
+
+# Gráfico de cada trayectoria con colores diferentes
+color_idx = 0
+for t0 in theta_0s:
+    sol = solve_ivp(sistema_pendulo, t_span, [t0, 0.0], t_eval=t_eval, rtol=1e-9, atol=1e-9)
+    theta_c = (sol.y[0] + np.pi) % (2 * np.pi) - np.pi  # Usamos sol.y[0]
+    plt.scatter(theta_c, sol.y[1], s=0.5, alpha=0.8, label=f'IC {color_idx}' if color_idx < 0 else "")
+    color_idx += 1
+
+for v0 in v_0s:
+    sol = solve_ivp(sistema_pendulo, t_span, [0.0, v0], t_eval=t_eval, rtol=1e-9, atol=1e-9)
+    theta_c = (sol.y[0] + np.pi) % (2 * np.pi) - np.pi
+    plt.scatter(theta_c, sol.y[1], s=0.5, alpha=0.8)
+    
+    # Barrido de la parte interior
+    sol_neg = solve_ivp(sistema_pendulo, t_span, [0.0, -v0], t_eval=t_eval, rtol=1e-9, atol=1e-9)
+    theta_c_neg = (sol_neg.y[0] + np.pi) % (2 * np.pi) - np.pi
+    plt.scatter(theta_c_neg, sol_neg.y[1], s=0.5, alpha=0.8)
+
+# 4. Visual del gráfico
+plt.title('Mapa Estroboscópico del Péndulo Simple Forzado', fontsize=12, fontweight='bold')
+plt.xlabel(r'$\theta$ (rad)', fontsize=11)
+plt.ylabel(r'$\dot{\theta}$ (rad/s)', fontsize=11)
+plt.xlim(-np.pi, np.pi)
+plt.ylim(-2.5, 2.5)
+plt.grid(True, linestyle='--', alpha=0.5)
+
+# Imagen guardada
+plt.savefig('mapa_estroboscopico_final.png', bbox_inches='tight', dpi=300)
+plt.show()
