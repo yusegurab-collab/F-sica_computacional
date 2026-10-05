@@ -1,0 +1,38 @@
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+alpha, w0, w = 0.1, 1.0, 2.0
+T = 2*np.pi/w
+spp = 200                 # pasos RK4 por periodo de forzamiento
+h = T/spp
+n_trans, n_keep = 300, 100  # periodos transitorios / registrados
+gam = np.linspace(0, 2.25, 1500)
+
+def f(t, th, om):
+    return om, -alpha*om - w0**2*np.sin(th) + gam*np.cos(w*t)*np.sin(th)
+
+th = np.ones_like(gam); om = np.ones_like(gam)
+t = 0.0
+def step(t, th, om):
+    k1 = f(t, th, om)
+    k2 = f(t+h/2, th+h/2*k1[0], om+h/2*k1[1])
+    k3 = f(t+h/2, th+h/2*k2[0], om+h/2*k2[1])
+    k4 = f(t+h, th+h*k3[0], om+h*k3[1])
+    return (th+h/6*(k1[0]+2*k2[0]+2*k3[0]+k4[0]),
+            om+h/6*(k1[1]+2*k2[1]+2*k3[1]+k4[1]))
+
+X, Y = [], []
+for n in range(n_trans+n_keep):
+    for _ in range(spp):
+        th, om = step(t, th, om); t += h
+    if n >= n_trans:
+        X.append(gam.copy()); Y.append(np.abs(om))
+plt.figure(figsize=(8,5.5))
+plt.plot(np.concatenate(X), np.concatenate(Y), 'b,', alpha=.8)
+plt.plot(np.concatenate(X), np.concatenate(Y), 'b.', ms=0.4)
+plt.xlim(0,2.25); plt.ylim(0,3.5)
+plt.xlabel(r'$\gamma$'); plt.ylabel(r'$|\dot\theta|$')
+plt.title('Diagrama de bifurcación (RK4, sección estroboscópica)')
+plt.tight_layout(); plt.savefig('bifurcacion.png', dpi=150)
