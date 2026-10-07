@@ -1,0 +1,53 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+Q, WD, G = 2.0, 2.0 / 3.0, 1.5
+T = 2 * np.pi / WD
+STEPS = 100
+DT = T / STEPS
+
+
+def rhs(th, om, ph):
+    return om, -om / Q - np.sin(th) + G * np.cos(ph), WD
+
+
+def rk4(th, om, ph):
+    k1 = rhs(th, om, ph)
+    k2 = rhs(th + DT/2*k1[0], om + DT/2*k1[1], ph + DT/2*k1[2])
+    k3 = rhs(th + DT/2*k2[0], om + DT/2*k2[1], ph + DT/2*k2[2])
+    k4 = rhs(th + DT*k3[0], om + DT*k3[1], ph + DT*k3[2])
+    return (th + DT/6*(k1[0] + 2*k2[0] + 2*k3[0] + k4[0]),
+            om + DT/6*(k1[1] + 2*k2[1] + 2*k3[1] + k4[1]),
+            ph + DT/6*(k1[2] + 2*k2[2] + 2*k3[2] + k4[2]))
+
+
+def wrap(x):
+    return (x + np.pi) % (2 * np.pi) - np.pi
+
+
+th, om, ph = 0.2, 0.0, 0.0
+
+for i in range(100 * STEPS):        # transitorio
+    th, om, ph = rk4(th, om, ph)
+
+N_PERIODOS = 40                     # cambia este numero para mas/menos trayectoria
+x, y = [], []
+for i in range(N_PERIODOS * STEPS):
+    th, om, ph = rk4(th, om, ph)
+    x.append(wrap(th))
+    y.append(om)
+x = np.array(x)
+y = np.array(y)
+
+# corta las lineas horizontales cuando theta salta de +pi a -pi
+saltos = np.where(np.abs(np.diff(x)) > np.pi)[0]
+x[saltos] = np.nan
+
+plt.figure(figsize=(8, 5))
+plt.plot(x, y, lw=0.6, color="tab:blue")
+plt.xlabel("theta (rad)")
+plt.ylabel("omega = d theta / dt")
+plt.title("Trayectoria en el espacio de fases, g = 1.5")
+plt.xlim(-np.pi, np.pi)
+plt.grid(alpha=0.3)
+plt.show()
