@@ -1,0 +1,61 @@
+# -*- coding: utf-8 -*-
+# Exponente de Lyapunov maximo vs g - pendulo de Baker & Gollub (Spyder, F5)
+# Tarda ~1-2 minutos. Para probar rapido baja N_MEAS (ej. 300) y N_G (ej. 61).
+import numpy as np
+import matplotlib.pyplot as plt
+
+Q, WD = 2.0, 2.0 / 3.0
+T = 2 * np.pi / WD
+STEPS = 100
+DT = T / STEPS
+N_TRANS, N_MEAS, N_G = 200, 1500, 241
+g = np.linspace(0.9, 1.5, N_G)
+
+
+def f(s):
+    th, om, ph, a, b = s
+    return np.array([om,
+                     -om / Q - np.sin(th) + g * np.cos(ph),
+                     WD * np.ones_like(ph),
+                     b,
+                     -np.cos(th) * a - b / Q])
+
+
+def rk4(s):
+    k1 = f(s)
+    k2 = f(s + 0.5*DT*k1)
+    k3 = f(s + 0.5*DT*k2)
+    k4 = f(s + DT*k3)
+    return s + DT/6 * (k1 + 2*k2 + 2*k3 + k4)
+
+
+s = np.zeros((5, N_G))
+s[0] = 0.2
+s[3] = s[4] = 1 / np.sqrt(2)
+
+for i in range(N_TRANS * STEPS):        # transitorio
+    s = rk4(s)
+    if i % STEPS == 0:
+        n = np.hypot(s[3], s[4])
+        s[3] /= n
+        s[4] /= n
+
+acc = np.zeros(N_G)
+for _ in range(N_MEAS):                 # Benettin
+    for _ in range(STEPS):
+        s = rk4(s)
+    n = np.hypot(s[3], s[4])
+    acc += np.log(n)
+    s[3] /= n
+    s[4] /= n
+lam = acc / (N_MEAS * T)
+
+plt.figure(figsize=(9, 4.5))
+plt.plot(g, lam, color="tab:red", lw=1.2)
+plt.axhline(0, color="k", lw=0.8)
+plt.xlabel("g (amplitud de forzamiento)")
+plt.ylabel(r"$\lambda_{max}$")
+plt.title("Exponente de Lyapunov maximo - Baker & Gollub (q=2, wD=2/3)")
+plt.grid(alpha=0.3)
+plt.savefig("lyapunov_mle.pdf")
+plt.show()
