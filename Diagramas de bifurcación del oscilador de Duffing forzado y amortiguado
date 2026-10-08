@@ -1,0 +1,84 @@
+"""
+Diagramas de bifurcación del oscilador de Duffing forzado y amortiguado
+x'' + delta x' - alpha x + beta x^3 = gamma cos(omega t)
+Método: RK4 de paso fijo, vectorizado sobre gamma.
+Autor: Yeison Uriel Segura Bermúdez - Universidad del Tolima
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# ---------------- Parámetros del Sistema ----------------
+delta, alpha, beta, omega = 0.1, 2.0, 2.0, 1.2
+x0, v0 = 1.0, 1.0  # Condición inicial (x, x')
+gamma_min, gamma_max, n_gamma = 0.1, 7.0, 1200
+T = 2 * np.pi / omega  # Periodo del forzamiento
+pasos_por_periodo = 200
+h = T / pasos_por_periodo
+n_transitorio = 300  # Periodos descartados para eliminar transitorios
+n_muestras = 120     # Puntos estroboscópicos guardados por cada gamma
+
+def derivadas(t, x, v, g):
+    """Sistema de primer orden equivalente."""
+    return v, -delta * v + alpha * x - beta * x**3 + g * np.cos(omega * t)
+
+def paso_rk4(t, x, v, g):
+    """Algoritmo Runge-Kutta de 4to orden vectorizado."""
+    k1x, k1v = derivadas(t, x, v, g)
+    k2x, k2v = derivadas(t + h / 2, x + h / 2 * k1x, v + h / 2 * k1v, g)
+    k3x, k3v = derivadas(t + h / 2, x + h / 2 * k2x, v + h / 2 * k2v, g)
+    k4x, k4v = derivadas(t + h, x + h * k3x, v + h * k3v, g)
+    return (x + h / 6 * (k1x + 2 * k2x + 2 * k3x + k4x), 
+            v + h / 6 * (k1v + 2 * k2v + 2 * k3v + k4v))
+
+def barrido():
+    """Realiza la simulación en paralelo para todos los valores de gamma."""
+    gammas = np.linspace(gamma_min, gamma_max, n_gamma)
+    x = np.full_like(gammas, x0)
+    v = np.full_like(gammas, v0)
+    X, V = [], []
+    
+    for n in range(n_transitorio + n_muestras):
+        t = n * T  # Sincronización perfecta del tiempo para evitar errores acumulativos
+        for _ in range(pasos_por_periodo):
+            x, v = paso_rk4(t, x, v, gammas)
+            t += h
+        if n >= n_transitorio:  # Guardar puntos en la sección de Poincaré estroboscópica
+            X.append(x.copy())
+            V.append(v.copy())
+            
+    return gammas, np.array(X), np.array(V)
+
+def graficar(gammas, datos, etiqueta, archivo):
+    """Configura y dibuja el mapa de bifurcación."""
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    
+    # Aplanamos las matrices para graficar eficientemente píxel por píxel
+    g_plot = np.tile(gammas, (datos.shape[0], 1)).ravel()
+    d_plot = datos.ravel()
+    
+    ax.plot(g_plot, d_plot, ",", color="#002b80", alpha=0.5)
+    ax.set_xlabel(r"$\gamma$ (Amplitud del forzamiento)", fontsize=11)
+    ax.set_ylabel(etiqueta, fontsize=11)
+    ax.set_xlim(gamma_min, gamma_max)
+    ax.grid(True, linestyle=":", alpha=0.5)
+    fig.tight_layout()
+    
+    # Guardar una copia
+    fig.savefig(archivo, dpi=300)
+
+if __name__ == "__main__":
+    # Comando mágico exclusivo de IPython para forzar a Spyder a abrir ventanas externas
+    try:
+        get_ipython().run_line_magic('matplotlib', 'qt')
+    except:
+        pass
+
+    print("Calculando el barrido vectorizado... Por favor, espere.")
+    g, X, V = barrido()
+    
+    print("Abriendo ventanas interactivas...")
+    graficar(g, X, r"Posición $x$", "bif_x.png")
+    graficar(g, V, r"Velocidad $\dot{x}$", "bif_v.png")
+    
+ 
