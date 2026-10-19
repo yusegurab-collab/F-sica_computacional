@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Parámetros del sistema 
+# Parámetros del sistema SAM
 mu = 3.0       # Relación de masas M/m (Caso integrable clásico del paper)
 E = 5.0        # Energía total constante del sistema para definir la escala
 
@@ -11,17 +11,17 @@ theta = np.linspace(0, 2 * np.pi, 1000)
 # Ecuación de la curva de velocidad cero en coordenadas polares (Energía cinética T = 0)
 r = E / (mu - np.cos(theta))
 
-# Conversión a coordenadas cartesianas espaciales
+# Conversión a coordenadas cartesianas espaciales 
 x = r * np.sin(theta)
 y = -r * np.cos(theta)
 
 # Configuración del gráfico
 fig, ax = plt.subplots(figsize=(6, 6))
 
-# Dibujo de la frontera límite
+# Dibujo de la frontera límite 
 ax.plot(x, y, color='#1f77b4', lw=2.5, label='Curva de Velocidad Cero (Frontera)')
 
-# Sombreado verde de la Región Admisible 
+# Sombreado verde de la Región Admisible de Movimiento 
 ax.fill(x, y, color='#2ca02c', alpha=0.2, label='Región Admisible de Movimiento ($T \\geq 0$)')
 
 # Marcador para la polea de pivote 
@@ -42,7 +42,7 @@ ax.grid(True, linestyle=':', alpha=0.6)
 ax.legend(loc='lower right', frameon=True, shadow=True, fontsize=9)
 ax.set_aspect('equal')
 
-# Guardar la gráfica 
+# Gráfica guardada automáticamente
 plt.tight_layout()
 plt.savefig('region_admisible_SAM.png', dpi=300)
 plt.show()
