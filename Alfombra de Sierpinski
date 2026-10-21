@@ -1,0 +1,53 @@
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Vertices del cuadrado
+V = np.array([[0, 0], [300, 0],[300, 300], [0, 300]])
+
+# Punto inicial
+P = np.array([150.0, 150.0])
+
+# Iteraciones
+N = 100000
+x = np.zeros(N)
+y = np.zeros(N)
+
+# Algoritmo del juego del caos para la alfombra
+for k in range(N):
+
+    # Cuadrados permitidos
+    while True:
+        i = np.random.randint(0, 3)
+        j = np.random.randint(0, 3)
+
+        # Se excluye el cuadrado central
+        if (i, j) != (1, 1):
+            break
+
+    # Transformacion hacia el cuadrado elegido
+    P = P/3 + np.array([i, j]) * 300/3
+
+    x[k] = P[0]
+    y[k] = P[1]
+
+# -----------------------------------------------------
+# Scatter plot
+# -----------------------------------------------------
+
+fig, ax = plt.subplots(figsize=(8, 8))
+
+ax.set_facecolor('black')
+ax.scatter(x, y, s=0.1, color='#176BFF')
+
+ax.text(0.03, 0.97, rf'$N = {N}$',
+    transform=ax.transAxes,
+    color='white',
+    verticalalignment='top')
+
+ax.set_aspect('equal')
+ax.set_title('Alfombra de Sierpinski',
+    color='#176BFF')
+ax.axis('off')
+
+plt.show()
